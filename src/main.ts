@@ -25,6 +25,14 @@ if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }
 
+console.log('[Bootstrap] Starting OpenWA');
+console.log('[Bootstrap] NODE_ENV=', process.env.NODE_ENV || 'unset');
+console.log('[Bootstrap] PORT=', process.env.PORT || '10000');
+console.log('[Bootstrap] SESSION_DATA_PATH=', process.env.SESSION_DATA_PATH || './data/sessions');
+console.log('[Bootstrap] STORAGE_LOCAL_PATH=', process.env.STORAGE_LOCAL_PATH || './data/media');
+console.log('[Bootstrap] DATABASE_NAME=', process.env.DATABASE_NAME || './data/openwa.sqlite');
+console.log('[Bootstrap] PUPPETEER_EXECUTABLE_PATH=', process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium');
+
 // 2. User-managed .env (does not override real process env)
 if (fs.existsSync(userEnvPath)) {
   console.log('[Bootstrap] Loading .env from:', userEnvPath);
@@ -159,11 +167,11 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
-  const port = process.env.PORT || 2785;
+  const port = parseInt(process.env.PORT || '10000', 10);
   await app.listen(port);
 
-  console.log(`🚀 OpenWA is running on: http://localhost:${port}`);
-  console.log(`📚 Swagger docs: http://localhost:${port}/api/docs`);
+  console.log(`🚀 OpenWA is running on: http://0.0.0.0:${port}`);
+  console.log(`📚 Swagger docs: http://0.0.0.0:${port}/api/docs`);
 }
 
 void bootstrap();

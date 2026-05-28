@@ -1,0 +1,34 @@
+services:
+  - type: web
+    name: openwa
+    env: docker
+    plan: free
+    dockerfilePath: Dockerfile
+    disk:
+      name: openwa-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: DATABASE_NAME
+        value: "/app/data/openwa.sqlite"
+      - key: DATABASE_TYPE
+        value: "sqlite"
+      - key: DATA_DIR
+        value: "/app/data"
+      - key: STORAGE_TYPE
+        value: "local"
+      - key: STORAGE_LOCAL_PATH
+        value: "/app/data/media"
+      - key: SESSION_DATA_PATH
+        value: "/app/data/sessions"
+      - key: PLUGINS_DIR
+        value: "/app/data/plugins"
+      - key: PUPPETEER_EXECUTABLE_PATH
+        value: "/usr/bin/chromium"
+      - key: PUPPETEER_HEADLESS
+        value: "true"
+      - key: PUPPETEER_ARGS
+        value: "--no-sandbox,--disable-setuid-sandbox"
+      - key: DOCKER_ORCHESTRATION_ENABLED
+        value: "false"
+    healthCheckPath: /api/health

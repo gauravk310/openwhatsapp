@@ -1,10 +1,16 @@
-# OpenWA - Dockerfile
-# Multi-stage build for production-ready image
+# =============================================================================
+# OpenWA - Render Production Dockerfile
+# Optimized for Render + Puppeteer + WhatsApp Sessions
+# =============================================================================
 
-# ===== Stage 1: Builder =====
+# ===== Stage 1: Build =====
 FROM node:22-slim AS builder
 
 WORKDIR /app
+
+# Build environment variables
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV SKIP_DASHBOARD_INSTALL=true
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -16,21 +22,35 @@ RUN apt-get update && apt-get install -y \
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies for build)
+# Install dependencies
 RUN npm ci
 
-# Copy source code
+# Copy source
 COPY . .
 
-# Build the application
+# Build app
 RUN npm run build
 
+# =============================================================================
 # ===== Stage 2: Production =====
+# =============================================================================
+
 FROM node:22-slim AS production
 
-# Install Chrome/Chromium and required dependencies
+WORKDIR /app
+
+# Production environment
+ENV NODE_ENV=production
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV SKIP_DASHBOARD_INSTALL=true
+
+# =============================================================================
+# Install Chromium + Required Libraries
+# =============================================================================
+
 RUN apt-get update && apt-get install -y \
     chromium \
+    chromium-driver \
     fonts-liberation \
     libappindicator3-1 \
     libasound2 \
@@ -49,41 +69,70 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     xdg-utils \
     dumb-init \
+    ca-certificates \
+    wget \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Chrome executable path for Puppeteer
+# =============================================================================
+# Puppeteer Configuration
+# =============================================================================
+
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
-# Create app user for security
-RUN groupadd -r openwa && useradd -r -g openwa openwa
+# =============================================================================
+# Copy Package Files
+# =============================================================================
 
-WORKDIR /app
-
-# Copy package files
 COPY package*.json ./
 
-# Install production dependencies only
+# Install Production Dependencies Only
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy built application from builder stage
-COPY --from=builder /app/dist ./dist
+# =============================================================================
+# Copy Built App
+# =============================================================================
 
-# Create data directories with proper permissions
-RUN mkdir -p ./data/sessions ./data/media && \
-    chown -R openwa:openwa /app
+COPY --from=builder --chown=node:node /app/dist ./dist
 
-# Note: Running as root to allow Docker socket access for orchestration
-# For production with stricter security, consider using a Docker socket proxy
-# USER openwa
+# =============================================================================
+# Create Persistent Data Directories
+# =============================================================================
 
-# Expose port
-EXPOSE 2785
+RUN mkdir -p \
+    /app/data/sessions \
+    /app/data/media \
+    /app/data/plugins
 
-# Health check
+# Ensure the non-root node user can read/write persisted runtime data
+RUN chown -R node:node /app/data /app/dist
+USER node
+
+# =============================================================================
+# Render Uses PORT Environment Variable
+# =============================================================================
+
+ENV PORT=10000
+
+# =============================================================================
+# Expose Internal Port
+# =============================================================================
+
+EXPOSE 10000
+
+# =============================================================================
+# Health Check
+# =============================================================================
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
-    CMD node -e "require('http').get('http://localhost:2785/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 10000) + '/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
-# Start with dumb-init to handle signals properly
+# =============================================================================
+# Start Application
+# =============================================================================
+
 ENTRYPOINT ["dumb-init", "--"]
+
 CMD ["node", "dist/main"]
+

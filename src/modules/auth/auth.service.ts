@@ -54,7 +54,7 @@ export class AuthService implements OnModuleInit {
     }
 
     // Always show the welcome banner on startup
-    const apiBaseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 2785}`;
+    const apiBaseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 10000}`;
     const dashboardUrl = process.env.DASHBOARD_URL || `http://localhost:${process.env.DASHBOARD_PORT || 2886}`;
 
     this.logger.log('');

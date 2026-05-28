@@ -30,11 +30,12 @@ export class SettingsController {
 
   constructor(private readonly configService: ConfigService) {
     // Initialize with values from configuration (reads from .env)
-    const port = this.configService.get<number>('port', 2785);
+    const port = this.configService.get<number>('port', 10000);
+    const baseUrl = this.configService.get<string>('baseUrl', `http://localhost:${port}`);
 
     this.settings = {
       general: {
-        apiBaseUrl: `http://localhost:${port}`,
+        apiBaseUrl: baseUrl,
         sessionTimeout: Math.floor(this.configService.get<number>('webhook.timeout', 300000) / 60000),
         autoReconnect: this.configService.get<boolean>('engine.autoReconnect', false),
         debugMode: this.configService.get<boolean>('database.logging', false),

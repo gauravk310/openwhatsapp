@@ -26,6 +26,11 @@ export class DockerService implements OnModuleInit {
   private isAvailable = false;
 
   async onModuleInit() {
+    if (process.env.DOCKER_ORCHESTRATION_ENABLED !== 'true') {
+      this.logger.log('Docker orchestration disabled by default.');
+      return;
+    }
+
     await this.initializeDocker();
     // Bootstrap orchestration: start containers based on saved config
     await this.bootstrapOrchestration();

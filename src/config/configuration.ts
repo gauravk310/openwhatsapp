@@ -1,5 +1,7 @@
 export default () => ({
-  port: parseInt(process.env.PORT || '2785', 10),
+  port: parseInt(process.env.PORT || '10000', 10),
+
+  dataDir: process.env.DATA_DIR || './data',
 
   // Redis configuration
   redis: {
@@ -51,6 +53,7 @@ export default () => ({
     puppeteer: {
       headless: process.env.PUPPETEER_HEADLESS !== 'false',
       args: (process.env.PUPPETEER_ARGS || '--no-sandbox,--disable-setuid-sandbox').split(','),
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium',
     },
     sessionDataPath: process.env.SESSION_DATA_PATH || './data/sessions',
   },
@@ -88,5 +91,10 @@ export default () => ({
       secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
       endpoint: process.env.S3_ENDPOINT,
     },
+  },
+
+  // Plugins directory location (persisted on Render via data mount)
+  plugins: {
+    dir: process.env.PLUGINS_DIR || './data/plugins',
   },
 });

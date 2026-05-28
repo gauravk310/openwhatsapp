@@ -42,6 +42,7 @@ export interface WhatsAppWebJsConfig {
   puppeteer?: {
     headless?: boolean;
     args?: string[];
+    executablePath?: string;
   };
   // Phase 3: Proxy per session
   proxy?: {
@@ -88,15 +89,21 @@ export class WhatsAppWebJsAdapter extends EventEmitter implements IWhatsAppEngin
         );
       }
 
+      const puppeteerOptions: Record<string, unknown> = {
+        headless: this.config.puppeteer?.headless ?? true,
+        args: puppeteerArgs,
+      };
+
+      if (this.config.puppeteer?.executablePath) {
+        puppeteerOptions.executablePath = this.config.puppeteer.executablePath;
+      }
+
       this.client = new Client({
         authStrategy: new LocalAuth({
           clientId: this.config.sessionId,
           dataPath: path.resolve(this.config.sessionDataPath),
         }),
-        puppeteer: {
-          headless: this.config.puppeteer?.headless ?? true,
-          args: puppeteerArgs,
-        },
+        puppeteer: puppeteerOptions,
       });
 
       this.setupEventHandlers();

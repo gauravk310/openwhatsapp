@@ -169,12 +169,12 @@ export class InfraController {
     const redisConnected = await this.cacheService.isAvailable();
 
     const storageType = this.configService.get<'local' | 's3'>('storage.type', 'local');
-    const storagePath = this.configService.get<string>('storage.path', './uploads');
+    const storagePath = this.configService.get<string>('storage.localPath', './data/media');
 
     const engineType = this.configService.get<string>('engine.type', 'whatsapp-web.js');
-    const engineHeadless = this.configService.get<boolean>('engine.headless', true);
+    const engineHeadless = this.configService.get<boolean>('engine.puppeteer.headless', true);
     const sessionDataPath = this.configService.get<string>('engine.sessionDataPath', './data/sessions');
-    const browserArgs = this.configService.get<string>('engine.browserArgs', '--no-sandbox --disable-gpu');
+    const browserArgs = (this.configService.get<string[]>('engine.puppeteer.args') || ['--no-sandbox', '--disable-setuid-sandbox']).join(' ');
 
     return {
       database: { connected: dbConnected, type: dbType, host: dbHost },
