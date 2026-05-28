@@ -2,7 +2,7 @@ import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { AuthService } from '../auth.service';
-import { ApiKeyRole } from '../entities/api-key.entity';
+import { ApiKeyRole, ApiKey } from '../entities/api-key.entity';
 import { REQUIRED_ROLE_KEY, PUBLIC_KEY } from '../decorators/auth.decorators';
 
 @Injectable()
@@ -31,8 +31,26 @@ export class ApiKeyGuard implements CanActivate {
     const sessionId = (request.params['sessionId'] || request.params['id']) as string | undefined;
     const clientIp = this.getClientIp(request);
 
-    // Validate API key
-    const apiKey = await this.authService.validateApiKey(apiKeyHeader, clientIp, sessionId);
+    // If a master key is configured and matches the header, bypass DB validation
+    const masterKey = process.env.API_MASTER_KEY;
+    let apiKey: ApiKey;
+    if (masterKey && apiKeyHeader === masterKey) {
+      apiKey = new ApiKey();
+      apiKey.id = 'master-key';
+      apiKey.name = 'Master API Key';
+      apiKey.keyHash = '';
+      apiKey.keyPrefix = 'MASTER';
+      apiKey.role = ApiKeyRole.ADMIN;
+      apiKey.allowedIps = null;
+      apiKey.allowedSessions = null;
+      apiKey.isActive = true;
+      apiKey.expiresAt = null;
+      apiKey.lastUsedAt = new Date();
+      apiKey.usageCount = 0;
+    } else {
+      // Validate API key via service
+      apiKey = await this.authService.validateApiKey(apiKeyHeader, clientIp, sessionId);
+    }
 
     // Check role permission
     const requiredRole = this.reflector.getAllAndOverride<ApiKeyRole>(REQUIRED_ROLE_KEY, [
