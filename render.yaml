@@ -2,7 +2,7 @@ services:
   - type: web
     name: openwa
     env: docker
-    plan: free
+    plan: starter
     dockerfilePath: Dockerfile
     disk:
       name: openwa-data
@@ -28,7 +28,13 @@ services:
       - key: PUPPETEER_HEADLESS
         value: "true"
       - key: PUPPETEER_ARGS
-        value: "--no-sandbox,--disable-setuid-sandbox"
+        value: "--no-sandbox,--disable-setuid-sandbox,--disable-dev-shm-usage,--disable-gpu"
       - key: DOCKER_ORCHESTRATION_ENABLED
         value: "false"
+      - key: DATABASE_SYNCHRONIZE
+        value: "true"
+      - key: NODE_ENV
+        value: "production"
+      - key: BASE_URL
+        sync: false
     healthCheckPath: /api/health

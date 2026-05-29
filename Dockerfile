@@ -10,7 +10,6 @@ WORKDIR /app
 
 # Build environment variables
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV SKIP_DASHBOARD_INSTALL=true
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y \
@@ -42,7 +41,6 @@ WORKDIR /app
 # Production environment
 ENV NODE_ENV=production
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV SKIP_DASHBOARD_INSTALL=true
 
 # =============================================================================
 # Install Chromium + Required Libraries

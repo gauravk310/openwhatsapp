@@ -92,7 +92,14 @@ Built on a **pluggable architecture**, OpenWA lets you swap database engines (SQ
 
 ---
 
-## 🚀 Quick Start
+## � Documentation
+
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Detailed setup, Docker, and deployment guide
+- **[Related Dashboard](../openwhatsapp-dashboard/)** - Web UI for managing sessions and webhooks
+
+---
+
+## �🚀 Quick Start
 
 ### Option A: Docker (Recommended)
 

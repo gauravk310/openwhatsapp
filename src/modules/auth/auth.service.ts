@@ -2,13 +2,12 @@ import { Injectable, NotFoundException, UnauthorizedException, OnModuleInit } fr
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { createHash, randomBytes } from 'crypto';
-import { existsSync, writeFileSync, readFileSync } from 'fs';
-import { join } from 'path';
 import { ApiKey, ApiKeyRole } from './entities/api-key.entity';
 import { CreateApiKeyDto, UpdateApiKeyDto } from './dto';
 import { createLogger } from '../../common/services/logger.service';
 
-const API_KEY_FILE = join(process.cwd(), 'data', '.api-key');
+// Hardcoded admin API key — change this before going to production
+const DEFAULT_ADMIN_KEY = 'dev-admin-key';
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -20,40 +19,17 @@ export class AuthService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    // Seed a default API key if none exist
-    const count = await this.apiKeyRepository.count();
-    let displayKey: string;
-    let isNewKey = false;
+    // Ensure the default admin key always exists in the database.
+    // If the key is already seeded (e.g. after a redeploy), upsert is a no-op.
+    const keyHash = this.hashKey(DEFAULT_ADMIN_KEY);
+    const existing = await this.apiKeyRepository.findOne({ where: { keyHash } });
 
-    if (count === 0) {
-      // Use predictable key in development, random key in production
-      displayKey =
-        process.env.NODE_ENV === 'production' ? `owa_k1_${randomBytes(32).toString('hex')}` : 'dev-admin-key';
-
-      await this.seedApiKey(displayKey, 'Default Admin Key', ApiKeyRole.ADMIN);
-      isNewKey = true;
-
-      // Save raw key to file for startup script to read
-      try {
-        writeFileSync(API_KEY_FILE, displayKey, 'utf-8');
-      } catch (err) {
-        this.logger.warn('Could not save API key file', { error: String(err) });
-      }
-    } else {
-      // Read saved API key from file if exists
-      if (existsSync(API_KEY_FILE)) {
-        try {
-          displayKey = readFileSync(API_KEY_FILE, 'utf-8').trim();
-        } catch (error) {
-          this.logger.warn(`Failed to read API key file: ${API_KEY_FILE}`, { error: String(error) });
-          displayKey = '(check dashboard for keys)';
-        }
-      } else {
-        displayKey = '(check dashboard for keys)';
-      }
+    if (!existing) {
+      await this.seedApiKey(DEFAULT_ADMIN_KEY, 'Default Admin Key', ApiKeyRole.ADMIN);
+      this.logger.log('Default admin API key seeded');
     }
 
-    // Always show the welcome banner on startup
+    // Welcome banner
     const apiBaseUrl = process.env.BASE_URL || `http://localhost:${process.env.PORT || 10000}`;
     const dashboardUrl = process.env.DASHBOARD_URL || `http://localhost:${process.env.DASHBOARD_PORT || 2886}`;
 
@@ -65,12 +41,8 @@ export class AuthService implements OnModuleInit {
     this.logger.log(`  📊 Dashboard: ${dashboardUrl}`);
     this.logger.log(`  📚 API Docs:  ${apiBaseUrl}/api/docs`);
     this.logger.log('');
-    if (isNewKey) {
-      this.logger.log('  🔑 API Key (newly created):');
-    } else {
-      this.logger.log('  🔑 API Key:');
-    }
-    this.logger.log(`     ${displayKey}`);
+    this.logger.log('  🔑 Admin API Key:');
+    this.logger.log(`     ${DEFAULT_ADMIN_KEY}`);
     this.logger.log('');
     this.logger.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     this.logger.log('');

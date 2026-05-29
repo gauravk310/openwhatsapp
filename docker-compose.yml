@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  # API Server
+  api:
+    build:
+      context: ./openwhatsapp
+      dockerfile: Dockerfile
+    container_name: openwa-api
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL:-postgres://openwa:openwa123@postgres:5432/openwa}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+    volumes:
+      - ./openwhatsapp/data:/app/data
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - openwa-network
+    restart: unless-stopped
+
+  # Dashboard UI
+  dashboard:
+    build:
+      context: ./openwhatsapp-dashboard
+      dockerfile: Dockerfile
+    container_name: openwa-dashboard
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    depends_on:
+      - api
+    networks:
+      - openwa-network
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: openwa-postgres
+    environment:
+      - POSTGRES_USER=${DB_USER:-openwa}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-openwa123}
+      - POSTGRES_DB=openwa
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - openwa-network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: openwa-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - openwa-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  openwa-network:
+    driver: bridge

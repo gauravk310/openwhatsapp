@@ -194,6 +194,29 @@ For production queue usage, set `QUEUE_ENABLED=true` and use a Redis-backed queu
 - Use HTTPS or proxy TLS termination when exposing the API publicly.
 - If using Traefik, configure a secure router and certificates in `traefik/`.
 
+### 9.1 Create an API key using Postman
+
+1. Open Postman and create a new `POST` request.
+2. Set the URL to your API endpoint:
+   - `http://<host>:2785/api/api-keys`
+3. Add headers:
+   - `Content-Type: application/json`
+   - `X-API-Key: <your-master-key>`
+4. In the request body, choose `raw` and `JSON`, then paste a payload such as:
+   ```json
+   {
+     "name": "Integration Key",
+     "permissions": ["sessions:read", "messages:write"],
+     "sessionAccess": ["default"],
+     "rateLimit": 100,
+     "expiresAt": "2027-01-01T00:00:00Z"
+   }
+   ```
+5. Send the request.
+6. Copy the returned `key` from the response; it is only shown once at creation.
+
+> Use the returned API key for subsequent requests with `X-API-Key: <your-api-key>` or `Authorization: Bearer <your-api-key>`.
+
 ---
 
 ## 10. Common Commands
