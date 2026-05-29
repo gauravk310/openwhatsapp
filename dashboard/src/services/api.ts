@@ -149,7 +149,7 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   const url = `${API_BASE_URL}${endpoint}`;
 
   // Get API key from sessionStorage for authentication
-  const apiKey = sessionStorage.getItem('openwa_api_key');
+  const apiKey = sessionStorage.getItem('openwa_api_key')?.trim();
 
   const headers: HeadersInit = {
     'Content-Type': 'application/json',

@@ -30,20 +30,21 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   // Initialize from sessionStorage to avoid setState in effect
-  const savedKey = sessionStorage.getItem('openwa_api_key');
+  const savedKey = sessionStorage.getItem('openwa_api_key')?.trim() || '';
   const [isAuthenticated, setIsAuthenticated] = useState(!!savedKey);
-  const [, setApiKey] = useState(savedKey || '');
+  const [, setApiKey] = useState(savedKey);
   const { setRole, role } = useRole();
 
   const handleLogin = async (key: string) => {
-    setApiKey(key);
-    sessionStorage.setItem('openwa_api_key', key);
+    const trimmedKey = key.trim();
+    setApiKey(trimmedKey);
+    sessionStorage.setItem('openwa_api_key', trimmedKey);
 
     // Fetch the role from API
     try {
       const response = await fetch('/api/auth/validate', {
         method: 'POST',
-        headers: { 'X-API-Key': key },
+        headers: { 'X-API-Key': trimmedKey },
       });
       if (response.ok) {
         const data = await response.json();
